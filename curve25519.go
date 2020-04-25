@@ -1,16 +1,13 @@
-// Copyright (c) 2016 Andreas Auernhammer. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
 package ecdh
 
 import (
-	"crypto"
 	"crypto/rand"
-	"errors"
-	"io"
-
 	"golang.org/x/crypto/curve25519"
+	"io"
+	"log"
 )
 
 type ecdh25519 struct{}
@@ -26,13 +23,13 @@ func X25519() KeyExchange {
 	return ecdh25519{}
 }
 
-func (ecdh25519) GenerateKey(random io.Reader) (private crypto.PrivateKey, public crypto.PublicKey, err error) {
+func (ecdh25519) GenerateKey(random io.Reader) (private []byte, public []byte, err error) {
 	if random == nil {
 		random = rand.Reader
 	}
 
-	var pri, pub [32]byte
-	_, err = io.ReadFull(random, pri[:])
+	pri := make([]byte, 32)
+	_, err = io.ReadFull(random, pri)
 	if err != nil {
 		return
 	}
@@ -42,67 +39,36 @@ func (ecdh25519) GenerateKey(random io.Reader) (private crypto.PrivateKey, publi
 	pri[31] &= 127
 	pri[31] |= 64
 
-	curve25519.ScalarBaseMult(&pub, &pri)
+	//curve25519.ScalarBaseMult(&pub, &pri)
+	pub, err := curve25519.X25519(pri, curve25519.Basepoint)
 
-	private = pri
-	public = pub
-	return
+	return pri, pub, err
 }
 
 func (ecdh25519) Params() CurveParams { return curve25519Params }
 
-func (ecdh25519) PublicKey(private crypto.PrivateKey) (public crypto.PublicKey) {
-	var pri, pub [32]byte
-	if ok := checkType(&pri, private); !ok {
-		panic("ecdh: unexpected type of private key")
+func (ecdh25519) PublicKey(private []byte) (public []byte) {
+	//curve25519.ScalarBaseMult(&pub, &pri)
+	pub, err := curve25519.X25519(private, curve25519.Basepoint)
+	if err != nil {
+		panic(err)
 	}
 
-	curve25519.ScalarBaseMult(&pub, &pri)
-
-	public = pub
-	return
+	return pub
 }
 
-func (ecdh25519) Check(peersPublic crypto.PublicKey) (err error) {
-	if ok := checkType(new([32]byte), peersPublic); !ok {
-		err = errors.New("unexptected type of peers public key")
-	}
-	return
+func (ecdh25519) Check([]byte) (err error) {
+	return nil
 }
 
-func (ecdh25519) ComputeSecret(private crypto.PrivateKey, peersPublic crypto.PublicKey) (secret []byte) {
-	var sec, pri, pub [32]byte
-	if ok := checkType(&pri, private); !ok {
-		panic("ecdh: unexpected type of private key")
-	}
-	if ok := checkType(&pub, peersPublic); !ok {
-		panic("ecdh: unexpected type of peers public key")
+func (ecdh25519) ComputeSecret(private []byte, peersPublic []byte) (secret []byte) {
+	var err error
+
+	//curve25519.ScalarMult(&sec, &pri, &pub)
+	secret, err = curve25519.X25519(private, peersPublic)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	curve25519.ScalarMult(&sec, &pri, &pub)
-
-	secret = sec[:]
-	return
-}
-
-func checkType(key *[32]byte, typeToCheck interface{}) (ok bool) {
-	switch t := typeToCheck.(type) {
-	case [32]byte:
-		copy(key[:], t[:])
-		ok = true
-	case *[32]byte:
-		copy(key[:], t[:])
-		ok = true
-	case []byte:
-		if len(t) == 32 {
-			copy(key[:], t)
-			ok = true
-		}
-	case *[]byte:
-		if len(*t) == 32 {
-			copy(key[:], *t)
-			ok = true
-		}
-	}
-	return
+	return secret
 }

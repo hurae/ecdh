@@ -1,11 +1,9 @@
-// Copyright (c) 2016 Andreas Auernhammer. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
 package ecdh
 
 import (
-	"crypto"
 	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
@@ -32,7 +30,7 @@ type genericCurve struct {
 	curve elliptic.Curve
 }
 
-func (g genericCurve) GenerateKey(random io.Reader) (private crypto.PrivateKey, public crypto.PublicKey, err error) {
+func (g genericCurve) GenerateKey(random io.Reader) (private []byte, public []byte, err error) {
 	if random == nil {
 		random = rand.Reader
 	}
@@ -53,59 +51,27 @@ func (g genericCurve) Params() CurveParams {
 	}
 }
 
-func (g genericCurve) PublicKey(private crypto.PrivateKey) (public crypto.PublicKey) {
-	key, ok := CheckKey(private)
-	if !ok {
-		panic("ecdh: unexpected type of private key")
-	}
-
+func (g genericCurve) PublicKey(private []byte) (public []byte) {
 	N := g.curve.Params().N
-	if new(big.Int).SetBytes(key).Cmp(N) >= 0 {
+	if new(big.Int).SetBytes(private).Cmp(N) >= 0 {
 		panic("ecdh: private key cannot used with given curve")
 	}
-
-	x, y := g.curve.ScalarBaseMult(key)
+	x, y := g.curve.ScalarBaseMult(private)
 	public = elliptic.Marshal(g.curve, x, y)
 	return
 }
 
-func (g genericCurve) Check(peersPublic crypto.PublicKey) (err error) {
-	key, ok := CheckKey(peersPublic)
-	if !ok {
-		err = errors.New("unexpected type of peers public key")
-	}
-	x, y := elliptic.Unmarshal(g.curve, key)
+func (g genericCurve) Check(peersPublic []byte) (err error) {
+	x, y := elliptic.Unmarshal(g.curve, peersPublic)
 	if !g.curve.IsOnCurve(x, y) {
 		err = errors.New("peer's public key is not on curve")
 	}
 	return
 }
 
-func (g genericCurve) ComputeSecret(private crypto.PrivateKey, peersPublic crypto.PublicKey) (secret []byte) {
-	priKey, ok := CheckKey(private)
-	if !ok {
-		panic("ecdh: unexpected type of private key")
-	}
-	pubKey, ok := CheckKey(peersPublic)
-	if !ok {
-		panic("ecdh: unexpected type of peers public key")
-	}
-	x, y := elliptic.Unmarshal(g.curve, pubKey)
-
-	sX, _ := g.curve.ScalarMult(x, y, priKey)
-
+func (g genericCurve) ComputeSecret(private []byte, peersPublic []byte) (secret []byte) {
+	x, y := elliptic.Unmarshal(g.curve, peersPublic)
+	sX, _ := g.curve.ScalarMult(x, y, private)
 	secret = sX.Bytes()
-	return
-}
-
-func CheckKey(typeToCheck interface{}) (key []byte, ok bool) {
-	switch t := typeToCheck.(type) {
-	case []byte:
-		key = t
-		ok = true
-	case *[]byte:
-		key = *t
-		ok = true
-	}
 	return
 }

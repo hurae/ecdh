@@ -83,7 +83,7 @@ func TestX25519(t *testing.T) {
 	dh := X25519()
 
 	secret := make([]byte, 32)
-	var priBob [32]byte
+	priBob := make([]byte, 32)
 	for i := 0; i < 2; i++ {
 		priAlice, pubAlice, err := dh.GenerateKey(nil)
 		if err != nil {
@@ -93,10 +93,10 @@ func TestX25519(t *testing.T) {
 		if _, err := io.ReadFull(rand.Reader, priBob[:]); err != nil {
 			t.Fatalf("carol: private key generation failed: %s", err)
 		}
-		pubBob := dh.PublicKey(&priBob)
+		pubBob := dh.PublicKey(priBob)
 
 		secAlice := dh.ComputeSecret(priAlice, pubBob)
-		secBob := dh.ComputeSecret(&priBob, pubAlice)
+		secBob := dh.ComputeSecret(priBob, pubAlice)
 
 		if !bytes.Equal(secAlice, secBob) {
 			toStr := hex.EncodeToString

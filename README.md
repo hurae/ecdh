@@ -1,5 +1,5 @@
-[![Godoc Reference](https://godoc.org/github.com/aead/ecdh?status.svg)](https://godoc.org/github.com/aead/ecdh)
-[![Build Status](https://travis-ci.org/aead/ecdh.svg?branch=master)](https://travis-ci.org/aead/ecdh)
+[![Godoc Reference](https://godoc.org/github.com/hurae/ecdh?status.svg)](https://godoc.org/github.com/hurae/ecdh)
+[![Build Status](https://travis-ci.org/hurae/ecdh.svg?branch=master)](https://travis-ci.org/hurae/ecdh)
 
 ## The ECDH key exchange
 
@@ -16,3 +16,4 @@ Install in your GOPATH: `go get -u github.com/hurae/ecdh`
 
 
 Fork of `github.com/aead/ecdh`, I’d like to have a version that always return a []byte type public key.
+Also, I'd like to use non-deprecated new X25519 API.
