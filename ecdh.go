@@ -30,6 +30,7 @@ type KeyExchange interface {
 	// Check returns a non-nil error if the peers public key cannot used for the
 	// key exchange - for instance the public key isn't a point on the elliptic curve.
 	// Only implemented for NIST curves. Curve25519 didn't provide such function.
+	// Actually, Curve25519 do not need this check. See https://cr.yp.to/ecdh.html.
 	// It's recommended to check peer's public key before computing the secret.
 	Check(peersPublic []byte) (err error)
 
