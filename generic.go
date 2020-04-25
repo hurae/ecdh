@@ -54,7 +54,7 @@ func (g genericCurve) Params() CurveParams {
 }
 
 func (g genericCurve) PublicKey(private crypto.PrivateKey) (public crypto.PublicKey) {
-	key, ok := checkPrivateKey(private)
+	key, ok := CheckKey(private)
 	if !ok {
 		panic("ecdh: unexpected type of private key")
 	}
@@ -70,26 +70,27 @@ func (g genericCurve) PublicKey(private crypto.PrivateKey) (public crypto.Public
 }
 
 func (g genericCurve) Check(peersPublic crypto.PublicKey) (err error) {
-	key, ok := checkPublicKey(peersPublic)
+	key, ok := CheckKey(peersPublic)
 	if !ok {
 		err = errors.New("unexpected type of peers public key")
 	}
-	if !g.curve.IsOnCurve(key.X, key.Y) {
+	x, y := elliptic.Unmarshal(g.curve, key)
+	if !g.curve.IsOnCurve(x, y) {
 		err = errors.New("peer's public key is not on curve")
 	}
 	return
 }
 
 func (g genericCurve) ComputeSecret(private crypto.PrivateKey, peersPublic crypto.PublicKey) (secret []byte) {
-	priKey, ok := checkKey(private)
+	priKey, ok := CheckKey(private)
 	if !ok {
 		panic("ecdh: unexpected type of private key")
 	}
-	pubKey, ok := checkKey(peersPublic)
+	pubKey, ok := CheckKey(peersPublic)
 	if !ok {
 		panic("ecdh: unexpected type of peers public key")
 	}
-	x, y := elliptic.Unmarshal(pubKey)
+	x, y := elliptic.Unmarshal(g.curve, pubKey)
 
 	sX, _ := g.curve.ScalarMult(x, y, priKey)
 
