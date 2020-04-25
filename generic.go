@@ -41,7 +41,7 @@ func (g genericCurve) GenerateKey(random io.Reader) (private crypto.PrivateKey, 
 		private = nil
 		return
 	}
-	public = Point{X: x, Y: y}
+	public = elliptic.Marshal(g.curve, x, y)
 	return
 }
 
@@ -65,7 +65,7 @@ func (g genericCurve) PublicKey(private crypto.PrivateKey) (public crypto.Public
 	}
 
 	x, y := g.curve.ScalarBaseMult(key)
-	public = Point{X: x, Y: y}
+	public = elliptic.Marshal(g.curve, x, y)
 	return
 }
 
@@ -81,39 +81,28 @@ func (g genericCurve) Check(peersPublic crypto.PublicKey) (err error) {
 }
 
 func (g genericCurve) ComputeSecret(private crypto.PrivateKey, peersPublic crypto.PublicKey) (secret []byte) {
-	priKey, ok := checkPrivateKey(private)
+	priKey, ok := checkKey(private)
 	if !ok {
 		panic("ecdh: unexpected type of private key")
 	}
-	pubKey, ok := checkPublicKey(peersPublic)
+	pubKey, ok := checkKey(peersPublic)
 	if !ok {
 		panic("ecdh: unexpected type of peers public key")
 	}
+	x, y := elliptic.Unmarshal(pubKey)
 
-	sX, _ := g.curve.ScalarMult(pubKey.X, pubKey.Y, priKey)
+	sX, _ := g.curve.ScalarMult(x, y, priKey)
 
 	secret = sX.Bytes()
 	return
 }
 
-func checkPrivateKey(typeToCheck interface{}) (key []byte, ok bool) {
+func CheckKey(typeToCheck interface{}) (key []byte, ok bool) {
 	switch t := typeToCheck.(type) {
 	case []byte:
 		key = t
 		ok = true
 	case *[]byte:
-		key = *t
-		ok = true
-	}
-	return
-}
-
-func checkPublicKey(typeToCheck interface{}) (key Point, ok bool) {
-	switch t := typeToCheck.(type) {
-	case Point:
-		key = t
-		ok = true
-	case *Point:
 		key = *t
 		ok = true
 	}
