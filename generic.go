@@ -11,12 +11,6 @@ import (
 	"math/big"
 )
 
-// Point represents a generic elliptic curve Point with a
-// X and a Y coordinate.
-type Point struct {
-	X, Y *big.Int
-}
-
 // Generic creates a new ecdh.KeyExchange with
 // generic elliptic.Curve implementations.
 func Generic(c elliptic.Curve) KeyExchange {
