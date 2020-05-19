@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Andreas huraway. All rights reserved.
+// Copyright (c) 2016 Andreas Auernhammer. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
@@ -29,14 +31,14 @@ type KeyExchange interface {
 
 	// Check returns a non-nil error if the peers public key cannot used for the
 	// key exchange - for instance the public key isn't a point on the elliptic curve.
-	// Only implemented for NIST curves. Curve25519 didn't provide such function.
-	// Actually, Curve25519 do not need this check. See https://cr.yp.to/ecdh.html.
+	// Generally, Curve25519 do not need this check, but an all zero key or nil key is not permitted.
+	// See https://cr.yp.to/ecdh.html for more detail about Curve25519.
 	// It's recommended to check peer's public key before computing the secret.
 	Check(peersPublic []byte) (err error)
 
 	// ComputeSecret returns the secret value computed from the given private key
 	// and the peers public key.
-	ComputeSecret(private []byte, peersPublic []byte) (secret []byte)
+	ComputeSecret(private []byte, peersPublic []byte) (secret []byte, err error)
 }
 
 // CurveParams contains the parameters of an elliptic curve.

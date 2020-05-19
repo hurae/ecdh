@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Andreas huraway. All rights reserved.
+// Copyright (c) 2016 Andreas Auernhammer. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
@@ -5,12 +7,16 @@ package ecdh
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
+	"errors"
+	"fmt"
 	"golang.org/x/crypto/curve25519"
 	"io"
-	"log"
 )
 
 type ecdh25519 struct{}
+
+var zero [32]byte
 
 var curve25519Params = CurveParams{
 	Name:    "Curve25519",
@@ -57,18 +63,22 @@ func (ecdh25519) PublicKey(private []byte) (public []byte) {
 	return pub
 }
 
-func (ecdh25519) Check([]byte) (err error) {
+func (ecdh25519) Check(publicKey []byte) (err error) {
+	if l := len(publicKey); l != 32 {
+		return fmt.Errorf("bad point length: %d, expected %d", l, 32)
+	}
+	if subtle.ConstantTimeCompare(publicKey, zero[:]) == 1 {
+		return errors.New("bad input point: low order point")
+	}
 	return nil
 }
 
-func (ecdh25519) ComputeSecret(private []byte, peersPublic []byte) (secret []byte) {
-	var err error
-
+func (ecdh25519) ComputeSecret(private []byte, peersPublic []byte) (secret []byte, err error) {
 	//curve25519.ScalarMult(&sec, &pri, &pub)
 	secret, err = curve25519.X25519(private, peersPublic)
 	if err != nil {
-		log.Fatal(err)
+		return secret, err
 	}
 
-	return secret
+	return secret, nil
 }

@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Andreas huraway. All rights reserved.
+// Copyright (c) 2016 Andreas Auernhammer. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
@@ -63,9 +65,9 @@ func (g genericCurve) Check(peersPublic []byte) (err error) {
 	return
 }
 
-func (g genericCurve) ComputeSecret(private []byte, peersPublic []byte) (secret []byte) {
+func (g genericCurve) ComputeSecret(private []byte, peersPublic []byte) (secret []byte, _ error) {
 	x, y := elliptic.Unmarshal(g.curve, peersPublic)
 	sX, _ := g.curve.ScalarMult(x, y, private)
 	secret = sX.Bytes()
-	return
+	return secret, nil
 }

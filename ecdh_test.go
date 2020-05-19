@@ -1,3 +1,5 @@
+// Copyright (c) 2020 Andreas huraway. All rights reserved.
+// Copyright (c) 2016 Andreas Auernhammer. All rights reserved.
 // Use of this source code is governed by a license that can be
 // found in the LICENSE file.
 
@@ -29,12 +31,12 @@ func ExampleGeneric() {
 	if err := p256.Check(publicBob); err != nil {
 		fmt.Printf("Bob's public key is not on the curve: %s\n", err)
 	}
-	secretAlice := p256.ComputeSecret(privateAlice, publicBob)
+	secretAlice, _ := p256.ComputeSecret(privateAlice, publicBob)
 
 	if err := p256.Check(publicAlice); err != nil {
 		fmt.Printf("Alice's public key is not on the curve: %s\n", err)
 	}
-	secretBob := p256.ComputeSecret(privateBob, publicAlice)
+	secretBob, _ := p256.ComputeSecret(privateBob, publicAlice)
 
 	if !bytes.Equal(secretAlice, secretBob) {
 		fmt.Printf("key exchange failed - secret X coordinates not equal\n")
@@ -54,16 +56,17 @@ func ExampleX25519() {
 	if err != nil {
 		fmt.Printf("Failed to generate Bob's private/public key pair: %s\n", err)
 	}
-
 	if err := c25519.Check(publicBob); err != nil {
 		fmt.Printf("Bob's public key is not on the curve: %s\n", err)
 	}
-	secretAlice := c25519.ComputeSecret(privateAlice, publicBob)
-
+	secretAlice, err := c25519.ComputeSecret(privateAlice, publicBob)
+	if err != nil {
+		fmt.Println("Failed to Compute secret for the key", err)
+	}
 	if err := c25519.Check(publicAlice); err != nil {
 		fmt.Printf("Alice's public key is not on the curve: %s\n", err)
 	}
-	secretBob := c25519.ComputeSecret(privateBob, publicAlice)
+	secretBob, err := c25519.ComputeSecret(privateBob, publicAlice)
 
 	if !bytes.Equal(secretAlice, secretBob) {
 		fmt.Printf("key exchange failed - secret X coordinates not equal\n")
@@ -94,8 +97,8 @@ func TestX25519(t *testing.T) {
 		}
 		pubBob := dh.PublicKey(priBob)
 
-		secAlice := dh.ComputeSecret(priAlice, pubBob)
-		secBob := dh.ComputeSecret(priBob, pubAlice)
+		secAlice, _ := dh.ComputeSecret(priAlice, pubBob)
+		secBob, _ := dh.ComputeSecret(priBob, pubAlice)
 
 		if !bytes.Equal(secAlice, secBob) {
 			toStr := hex.EncodeToString
@@ -123,7 +126,7 @@ func BenchmarkX25519(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		curve.ComputeSecret(privateAlice, publicBob)
+		_, _ = curve.ComputeSecret(privateAlice, publicBob)
 	}
 }
 
@@ -150,7 +153,7 @@ func BenchmarkP256(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		p256.ComputeSecret(privateAlice, publicBob)
+		_, _ = p256.ComputeSecret(privateAlice, publicBob)
 	}
 }
 
